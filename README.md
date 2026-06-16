@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ORDON: Deterministic Sovereign Operating Environment</title>
     <style>
-        /* ORDON S-NODE ENTERPRISE ARCHITECTURE */
+        /* ORDON S-NODE ENTERPRISE ARCHITECTURE - HIGH-CONTRAST NEON CORE */
         :root { --bg-main: #07090e; --bg-panel: #0d111a; --border-color: #1b2333; --accent-amber: #ff9f00; --accent-blue: #0091ff; --accent-green: #00e676; --accent-red: #ff1744; --text-main: #e2e8f0; --text-muted: #64748b; }
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Courier New', Courier, monospace; margin: 0; padding: 0; display: grid; grid-template-columns: 320px 1fr; height: 100vh; overflow: hidden; font-size: 14px; }
         
         /* SIDEBAR ВЕРТИКАЛЬ С СУВЕРЕННЫМИ ИНДЕКСАМИ */
-        .sidebar { background-color: var(--bg-panel); border-right: 2px solid var(--border-color); padding: 25px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+        .sidebar { background-color: var(--bg-panel); border-right: 2px solid var(--border-color); padding: 25px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; height: 100vh; }
         .logo-block { border-bottom: 2px solid var(--border-color); padding-bottom: 20px; margin-bottom: 25px; }
         .logo-text { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -1px; }
         .nav-links { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
-        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid transparent; border-radius: 6px; color: var(--text-main); text-decoration: none; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+        .nav-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 15px; border: 1px solid transparent; border-radius: 6px; color: var(--text-main); text-decoration: none; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 13px; }
         .nav-item:hover, .nav-item.active { background-color: #121824; border-color: var(--border-color); color: #fff; }
         .nav-item.active { border-left: 3px solid var(--accent-amber); }
         .nav-idx { font-size: 11px; font-weight: normal; color: var(--text-muted); line-height: 1.4; margin-top: 2px; }
-        .latency-card { background-color: #090c12; border: 1px solid var(--border-color); padding: 15px; border-radius: 6px; font-size: 12px; }
+        .latency-card { background-color: #090c12; border: 1px solid var(--border-color); padding: 15px; border-radius: 6px; font-size: 12px; margin-top: auto; }
         
         /* DASHBOARD WORKSPACE */
         .main-content { display: grid; grid-template-rows: 70px 1fr; height: 100vh; overflow: hidden; }
@@ -38,7 +38,7 @@
         .progress-fill { height: 100%; background-color: var(--accent-blue); width: 92%; }
         .stat-card.amber .progress-fill { background-color: var(--accent-amber); width: 78%; }
         
-        .workspace-layout { display: grid; grid-template-columns: 1.6fr 1.4fr; gap: 20px; min-height: 460px; }
+        .workspace-layout { display: grid; grid-template-columns: 1.6fr 1.4fr; gap: 20px; min-height: 460px; margin-bottom: 20px; }
         .panel-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
         .panel-title-block { font-size: 13px; font-weight: 900; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; color: #fff; letter-spacing: 1px; display: flex; justify-content: space-between; }
         
@@ -68,7 +68,7 @@
         .cmd-input:focus { border-color: var(--accent-amber); outline: none; }
         .exec-btn { background-color: var(--accent-amber); color: #000; font-weight: 900; border: none; padding: 10px 22px; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-family: inherit; font-size: 13px; }
         
-        footer { background-color: #05070a; padding: 40px 20px; font-size: 14px; color: #94a3b8; border-top: 2px solid #1b2333; }
+        footer { background-color: #05070a; padding: 40px 20px; font-size: 14px; color: #94a3b8; border-top: 2px solid #1b2333; margin-top: 20px; }
         .footer-container { max-width: 1300px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 35px; }
         .company-name { color: #ffffff; font-weight: bold; font-size: 18px; margin: 0 0 12px 0; }
         .passport-box { background-color: #0d111a; border: 2px solid #1b2333; padding: 25px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
@@ -79,6 +79,7 @@
 </head>
 <body>
 
+    <!-- SIDEBAR ВЕРТИКАЛЬ С НАШИМИ КНОПКАМИ -->
     <aside class="sidebar">
         <div class="top-nav-block">
             <div class="logo-block">
@@ -87,11 +88,12 @@
             </div>
             <nav class="nav-links">
                 <div class="nav-item active">📁 Control Center</div>
-                <div onclick="activateModule('АКТИВАЦИЯ: РАСЧЕТ ИНДЕКСА УДОВЛЕТВОРЕННОСТИ ЖИЗНЬЮ (ИУЖ)')" class="nav-item" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                <div onclick="activateModule('АКТИВАЦИЯ: РАСЧЕТ ИНДЕКСА УДОВЛЕТВОРЕННОСТИ ЖИЗНЬЮ (ИУЖ)')" class="nav-item">
                     <span style="color: var(--accent-green);">📊 Модуль 01 // ИУЖ</span>
                     <span class="nav-idx">Индекс удовлетворенности жизнью населения</span>
                 </div>
-                <div onclick="activateModule('АКТИВАЦИЯ: РАСЧЕТ ИНДЕКСА ЭФФЕКТИВНОСТИ ГЛАВЫ (ИЭГ)')" class="nav-item" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                <div onclick="activateModule('АКТИВАЦИЯ: РАСЧЕТ ИНДЕКСА ЭФФЕКТИВНОСТИ ГЛАВЫ (ИЭГ)')" class="nav-item">
                     <span style="color: var(--accent-amber);">📊 Модуль 02 // ИЭГ</span>
                     <span class="nav-idx">Индекс эффективности главы МО</span>
                 </div>
+                <div onclick="activateModule('АКТИВАЦИЯ: РАСЧЕТ ИНДЕКСА ВИТАЛЬНОСТИ ОКРУГА (ИВО)')" class="nav-item">
