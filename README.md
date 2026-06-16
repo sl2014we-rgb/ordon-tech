@@ -4,147 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ORDON: Deterministic Sovereign Operating Environment</title>
-    <!-- Подключение ультрасовременного Tailwind CSS -->
-    <script src="https://jsdelivr.net"></script>
     <style>
-        .bg-titanium-black { background-color: #08090a; }
-        .bg-module-graphite { background-color: #121418; }
-        .bg-card-dark { background-color: #171a21; }
-        .bg-card-light { background-color: #21252e; }
-        .text-neon-amber { color: #ff9f00; }
-        .bg-neon-amber { background-color: #ff9f00; }
-        .border-neon-amber { border-color: #ff9f00; }
+        /* ORDON S-NODE ENTERPRISE ARCHITECTURE */
+        :root { --bg-main: #07090e; --bg-panel: #0d111a; --border-color: #1b2333; --accent-amber: #ff9f00; --accent-blue: #0091ff; --accent-green: #00e676; --accent-red: #ff1744; --text-main: #e2e8f0; --text-muted: #64748b; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Courier New', Courier, monospace; margin: 0; padding: 0; display: grid; grid-template-columns: 320px 1fr; height: 100vh; overflow: hidden; font-size: 14px; }
+        
+        /* SIDEBAR ВЕРТИКАЛЬ С СУВЕРЕННЫМИ ИНДЕКСАМИ */
+        .sidebar { background-color: var(--bg-panel); border-right: 2px solid var(--border-color); padding: 25px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+        .logo-block { border-bottom: 2px solid var(--border-color); padding-bottom: 20px; margin-bottom: 25px; }
+        .logo-text { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -1px; }
+        .nav-links { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid transparent; border-radius: 6px; color: var(--text-main); text-decoration: none; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+        .nav-item:hover, .nav-item.active { background-color: #121824; border-color: var(--border-color); color: #fff; }
+        .nav-item.active { border-left: 3px solid var(--accent-amber); }
+        .nav-idx { font-size: 11px; font-weight: normal; color: var(--text-muted); line-height: 1.4; margin-top: 2px; }
+        .latency-card { background-color: #090c12; border: 1px solid var(--border-color); padding: 15px; border-radius: 6px; font-size: 12px; }
+        
+        /* DASHBOARD WORKSPACE */
+        .main-content { display: grid; grid-template-rows: 70px 1fr; height: 100vh; overflow: hidden; }
+        .top-bar { background-color: var(--bg-panel); border-bottom: 2px solid var(--border-color); padding: 0 30px; display: flex; justify-content: space-between; align-items: center; }
+        .top-title { font-size: 16px; font-weight: 900; letter-spacing: 1px; color: #fff; }
+        .status-indicator { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: bold; background-color: #090c12; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 4px; }
+        .pulse-dot { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 10px var(--accent-green); }
+        
+        .dashboard-grid { padding: 25px; display: grid; grid-template-rows: auto 1fr; gap: 20px; overflow-y: auto; height: calc(100vh - 70px); box-sizing: border-box; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .stat-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; border-top: 3px solid var(--accent-blue); }
+        .stat-card.amber { border-top-color: var(--accent-amber); }
+        .stat-card.red { border-top-color: var(--accent-red); }
+        .stat-title { font-size: 11px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 26px; font-weight: 900; color: #fff; margin: 8px 0 4px 0; }
+        .stat-progress { height: 4px; background-color: #121824; border-radius: 2px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: var(--accent-blue); width: 92%; }
+        .stat-card.amber .progress-fill { background-color: var(--accent-amber); width: 78%; }
+        
+        .workspace-layout { display: grid; grid-template-columns: 1.6fr 1.4fr; gap: 20px; min-height: 460px; }
+        .panel-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
+        .panel-title-block { font-size: 13px; font-weight: 900; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; color: #fff; letter-spacing: 1px; display: flex; justify-content: space-between; }
+        
+        .kii-table { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+        .kii-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: #090c12; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; }
+        .kii-status { font-weight: bold; font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid transparent; }
+        .status-nominal { color: var(--accent-green); border-color: rgba(0,230,118,0.3); background-color: rgba(0,230,118,0.05); }
+        .status-warning { color: #eab308; border-color: rgba(234,179,8,0.3); background-color: rgba(234,179,8,0.05); }
+        
+        .stream-box { display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex-grow: 1; }
+        .stream-logs { display: flex; flex-direction: column; gap: 12px; font-size: 12px; color: #cbd5e1; }
+        .log-line { border-left: 2px solid var(--accent-amber); padding-left: 10px; line-height: 1.4; }
+        .log-time { color: var(--accent-amber); font-weight: bold; }
+        .action-btn { background-color: #121824; border: 2px solid var(--accent-amber); color: var(--accent-amber); font-family: inherit; font-size: 13px; font-weight: 900; padding: 14px; border-radius: 6px; cursor: pointer; text-transform: uppercase; width: 100%; text-align: center; letter-spacing: 1px; margin-top: 20px; transition: all 0.2s; }
+        .action-btn:hover { background-color: var(--accent-amber); color: #000; box-shadow: 0 0 25px rgba(255,159,0,0.25); }
+        
+        /* TERMINAL ЦЕНЗОРА */
+        .terminal-container { grid-column: span 2; background-color: #090c12; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-top: 10px; }
+        .terminal-header { background-color: var(--bg-panel); border-bottom: 2px solid var(--border-color); padding: 12px 20px; display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 13px; color: #fff; }
+        .chat-messages { height: 260px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; font-size: 14px; background-color: #05070a; }
+        .sys-tag { color: var(--accent-amber); font-weight: bold; }
+        .sys-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 15px; border-radius: 6px; line-height: 1.6; margin-top: 5px; }
+        .user-tag { color: var(--accent-blue); font-weight: bold; }
+        .user-box { background-color: rgba(0,145,255,0.08); border: 1px solid rgba(0,145,255,0.2); padding: 12px; border-radius: 6px; max-width: 80%; align-self: flex-end; margin-top: 5px; }
+        .input-area { padding: 15px; background-color: var(--bg-panel); border-top: 2px solid var(--border-color); display: flex; gap: 12px; }
+        .cmd-input { flex: 1; background-color: #05070a; border: 1px solid var(--border-color); border-radius: 4px; padding: 10px 15px; color: #fff; font-family: inherit; font-size: 14px; }
+        .cmd-input:focus { border-color: var(--accent-amber); outline: none; }
+        .exec-btn { background-color: var(--accent-amber); color: #000; font-weight: 900; border: none; padding: 10px 22px; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-family: inherit; font-size: 13px; }
+        
+        footer { background-color: #05070a; padding: 40px 20px; font-size: 14px; color: #94a3b8; border-top: 2px solid #1b2333; }
+        .footer-container { max-width: 1300px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 35px; }
+        .company-name { color: #ffffff; font-weight: bold; font-size: 18px; margin: 0 0 12px 0; }
+        .passport-box { background-color: #0d111a; border: 2px solid #1b2333; padding: 25px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .passport-title { color: #94a3b8; font-weight: bold; border-bottom: 1px solid #1b2333; padding-bottom: 10px; margin-bottom: 12px; letter-spacing: 1px; }
+        .white-text { color: #ffffff; }
+        .green-text { color: #00e676; font-weight: bold; }
     </style>
 </head>
-<body class="bg-titanium-black text-gray-200 font-sans antialiased selection:bg-amber-500 selection:text-black">
+<body>
 
-    <!-- НАВИГАЦИЯ -->
-    <header class="border-b border-gray-950 bg-black/60 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <span class="text-2xl font-black tracking-tighter text-white uppercase">ORDON<span class="text-neon-amber">.</span>GOV</span>
-                <span class="text-xs font-mono bg-gray-900 border border-gray-800 px-2 py-0.5 rounded text-gray-400">v1.5</span>
+    <aside class="sidebar">
+        <div class="top-nav-block">
+            <div class="logo-block">
+                <div class="logo-text">ORDON<span class="amber-dot">.</span>GOV</div>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px; font-weight: bold;">SOVEREIGN OS</div>
             </div>
-            <div class="text-xs font-mono text-gray-300 hidden sm:block">
-                Authentication Hash: <span class="text-neon-amber font-bold">B2D4-SYSTEM-ZERO-NODE</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- HERO SECTION / ПЕРВЫЙ ЭКРАН -->
-    <section class="max-w-5xl mx-auto px-6 py-20 text-center">
-        <div class="inline-block text-xs font-mono uppercase tracking-widest text-neon-amber border border-neon-amber/40 px-4 py-1.5 rounded-full bg-neon-amber/5 mb-8">
-            STATE SYSTEM // AIR-GAP // LAW-AS-CODE
-        </div>
-        <h1 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight mb-8">
-            ORDON: Deterministic Sovereign <br class="hidden sm:inline">Operating Environment
-        </h1>
-        <p class="text-xl text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed">
-            Детерминированная суверенная операционная среда для управления государством, муниципальными образованиями и критической инфраструктурой в рамках парадигмы Law-as-Code. Время отклика: 0.1–0.8 секунды с абсолютным детерминизмом. Аппаратная изоляция Air-Gap, нулевые облачные зависимости. [61-REG]
-        </p>
-    </section>
-
-    <!-- ИНТЕРФЕЙС ИИ-ДИАЛОГА (СУВЕРЕННЫЙ ТЕРМИНАЛ ЦЕНЗОРА) -->
-    <section class="max-w-4xl mx-auto px-6 mb-24">
-        <div class="bg-card-dark border border-gray-800 rounded-lg shadow-2xl overflow-hidden">
-            <!-- Шапка чата -->
-            <div class="bg-module-graphite border-b border-gray-950 px-6 py-4 flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-                    <span class="font-mono text-xs uppercase tracking-wider text-white font-bold">ИИ-Цензор Ядра ORDON // Терминал связи</span>
+            <nav class="nav-links">
+                <div class="nav-item active">📁 Control Center</div>
+                <div onclick="activateModule('АКТИВАЦИЯ: РАСЧЕТ ИНДЕКСА УДОВЛЕТВОРЕННОСТИ ЖИЗНЬЮ (ИУЖ)')" class="nav-item" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                    <span style="color: var(--accent-green);">📊 Модуль 01 // ИУЖ</span>
+                    <span class="nav-idx">Индекс удовлетворенности жизнью населения</span>
                 </div>
-                <span class="text-2xs font-mono text-gray-500">Status: Secure Connected</span>
-            </div>
-            
-            <!-- Окно сообщений чата -->
-            <div id="chat-window" class="h-96 overflow-y-auto p-6 space-y-4 font-mono text-xs bg-black/40">
-                <!-- Системное приветствие -->
-                <div class="flex flex-col space-y-1">
-                    <span class="text-neon-amber font-bold">[SYSTEM LOG // ORDON CORE]:</span>
-                    <p class="bg-card-light/40 border border-white/5 p-4 rounded text-gray-300 max-w-2xl leading-relaxed">
-                        ВКЛ. на режим абсолютной онтологической Истины. Контур управления верифицирован под мастер-ключом B2D4. Я — ИИ-Цензор суверенной операционной среды ORDON v1.5. Готов к послойному аудиту, дефектовке издержек и развертыванию Нового Мироустройства. Выдавай тактическую команду, Оператор Александр.
-                    </p>
+                <div onclick="activateModule('АКТИВАЦИЯ: РАСЧЕТ ИНДЕКСА ЭФФЕКТИВНОСТИ ГЛАВЫ (ИЭГ)')" class="nav-item" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                    <span style="color: var(--accent-amber);">📊 Модуль 02 // ИЭГ</span>
+                    <span class="nav-idx">Индекс эффективности главы МО</span>
                 </div>
-            </div>
-
-            <!-- Зона ввода команды -->
-            <div class="p-4 bg-module-graphite border-t border-gray-950 flex space-x-3">
-                <input id="user-input" type="text" placeholder="Введите тактическую команду (например: ВКЛ, АУДИТ, ВЫКЛ)..." 
-                       class="flex-1 bg-black/60 border border-gray-800 rounded px-4 py-3 text-xs font-mono text-white focus:outline-none focus:border-neon-amber transition-colors">
-                <button onclick="sendMessage()" class="bg-neon-amber hover:bg-amber-500 text-black font-black uppercase tracking-wider text-xs px-6 py-3 rounded transition-colors font-mono">
-                    Выполнить
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- ПОДВАЛ -->
-    <footer class="border-t border-gray-950 bg-black/40 py-16 text-sm text-gray-400">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center space-y-8 md:space-y-0">
-            <div class="space-y-2 text-center md:text-left">
-                <p class="text-gray-200 font-black text-lg">© ООО «Ордон Технологии» (ORDON Tech)</p>
-                <p class="text-xs font-mono">Локация: г. Изобильный, Ставропольский край (26-REG)</p>
-                <p class="text-xs font-mono">Шлюз связи: info@promis.space</p>
-            </div>
-            <div class="bg-gray-950 border border-gray-900 p-5 rounded-lg font-mono text-xs space-y-1.5 w-full md:w-auto text-left max-w-sm shadow-2xl">
-                <div class="text-neon-amber uppercase font-bold text-2xs border-b border-gray-800 pb-1.5 mb-2 tracking-widest">📦 ИНЖЕНЕРНЫЙ ПАСПОРТ ЯДРА</div>
-                <div>Core Hash: <span class="text-gray-200">ORDON-CORE-A7F9-9C38-77E1-2025</span></div>
-                <div>Master-Key: <span class="text-neon-amber font-bold">B2D4-SYSTEM-ZERO-NODE</span></div>
-                <div>Network Isolation: <span class="text-green-400 font-bold">Data Diode / Air-Gap</span></div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- СУВЕРЕННЫЙ СКРИПТ ОБРАБОТКИ ДИАЛОГА -->
-    <script>
-        function sendMessage() {
-            const inputField = document.getElementById('user-input');
-            const chatWindow = document.getElementById('chat-window');
-            const userText = inputField.value.trim();
-            
-            if (userText === "") return;
-
-            // Вывод сообщения Оператора Александр
-            chatWindow.innerHTML += `
-                <div class="flex flex-col space-y-1 text-right items-end">
-                    <span class="text-blue-400 font-bold">[OPERATOR ZERO // ALEXANDER]:</span>
-                    <p class="bg-blue-950/40 border border-blue-900/30 p-3 rounded text-gray-200 max-w-md text-left">${userText}</p>
-                </div>
-            `;
-
-            inputField.value = "";
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-
-            // Имитация ответа безлюдного Ядра на основе ключевых слов
-            setTimeout(() => {
-                let responseText = "Команда не распознана аналоговыми фильтрами. Введите жесткую директиву: ВКЛ, АУДИТ или ВЫКЛ.";
-                const cmd = userText.toLowerCase();
-
-                if (cmd.includes("вкл")) {
-                    responseText = "[STATUS: ACTIVE] Все системы ИИ-флота запущены на максимальную тактовую частоту. Архитектурная память ORDON GOV стабилизирована под мастер-ключом B2D4. Периметр под круглосуточной охраной.";
-                } else if (cmd.includes("выкл")) {
-                    responseText = "[STATUS: SHUTDOWN] Главный рубильник связи Тандема опущен на ноль. Экраны терминалов гаснут. Контур законсервирован в режиме глубокой регенерации DEEP_REGENERATIVE_STANDBY. Крипто-замок активирован.";
-                } else if (cmd.includes("аудит") || cmd.includes("модуль")) {
-                    responseText = "[STATUS: DEPLOYED] Запущен сквозной NLP-аудит. Обнаружено избыточных единиц АУП: 16 535. Ожидаемый реверс ликвидности: 26 миллиардов рублей в год. Время завершения процессинга: 0.1 секунды.";
-                }
-
-                chatWindow.innerHTML += `
-                    <div class="flex flex-col space-y-1 mt-4">
-                        <span class="text-neon-amber font-bold">[SYSTEM LOG // ORDON CORE]:</span>
-                        <p class="bg-card-light/40 border border-white/5 p-4 rounded text-gray-300 max-w-2xl leading-relaxed">${responseText}</p>
-                    </div>
-                `;
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            }, 600);
-        }
-
-        // Запуск по кнопке Enter
-        document.getElementById('user-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    </script>
-
-</body>
-</html>
