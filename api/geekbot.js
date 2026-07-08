@@ -1,5 +1,7 @@
-export default async function handler(req, res) {
-    // CORS-шлюзы для promis.space
+const https = require('https');
+
+export default function handler(req, res) {
+    // Включаем CORS для беспрепятственного прохода данных на promis.space
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -15,33 +17,64 @@ export default async function handler(req, res) {
     try {
         const { messages, temperature } = req.body;
 
-        // Прямой запрос к GeekBot.ru
-        const response = await fetch('https://geekbot.ru', {
+        // Формируем тело запроса для отправки на GeekBot
+        const postData = JSON.stringify({
+            model: 'geekbot',
+            messages: messages,
+            temperature: temperature || 0.0
+        });
+
+        // Жесткие системные настройки сетевого потока к geekbot.ru
+        const options = {
+            hostname: 'geekbot.ru',
+            port: 443,
+            path: '/v1/chat/completions',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.GEEKBOT_API_KEY || ''}`
-            },
-            body: JSON.stringify({
-                model: 'geekbot',
-                messages: messages,
-                temperature: temperature || 0.0
-            })
+                'Authorization': `Bearer ${process.env.GEEKBOT_API_KEY || ''}`,
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        // Открываем прямой системный кабель к серверу GeekBot
+        const gRequest = https.request(options, (gResponse) => {
+            let buffer = '';
+
+            gResponse.on('data', (chunk) => { buffer += chunk; });
+
+            gResponse.on('end', () => {
+                try {
+                    // Если GeekBot вернул ошибку, мы выводим её текст на сайт, а не падаем
+                    if (gResponse.statusCode !== 200) {
+                        return res.status(200).json({
+                            choices: [{ message: { content: `❌ Отказ сервера GeekBot (Статус ${gResponse.statusCode}): ${buffer}. Проверьте токен на Vercel.` } }]
+                        });
+                    }
+
+                    const data = JSON.parse(buffer);
+                    return res.status(200).json(data);
+                } catch (parseErr) {
+                    return res.status(200).json({
+                        choices: [{ message: { content: `❌ Ошибка обработки ответа ИИ: ${buffer}` } }]
+                    });
+                }
+            });
         });
 
-        // Если сам GeekBot ответил ошибкой, мы выводим ее текст, а не падаем в 500!
-        if (!response.ok) {
-            const errText = await response.text();
+        gRequest.on('error', (e) => {
             return res.status(200).json({
-                choices: [{ message: { content: `❌ Ошибка внешнего сервера GeekBot (Статус ${response.status}): ${errText}. Проверьте токен GEEKBOT_API_KEY на Vercel.` } }]
+                choices: [{ message: { content: `❌ Ошибка коннекта моста к GeekBot: ${e.message}` } }]
             });
-        }
+        });
 
-        const data = await response.json();
-        return res.status(200).json(data);
+        // Заталкиваем наш Payload в кабель и закрываем поток
+        gRequest.write(postData);
+        gRequest.end();
 
     } catch (error) {
-        // Выводим текст системной ошибки Node.js прямо на экран сайта для диагностики
         return res.status(200).json({
-            choices: [{ message: { content: `❌ Внутренний сбой скрипта Node.js: ${error.message}` } }]
+            choices: [{ message: { content: `❌ Авария скрипта Node.js: ${error.message}` } }]
         });
+    }
+}
