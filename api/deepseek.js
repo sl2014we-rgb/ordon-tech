@@ -27,14 +27,13 @@ module.exports = function handler(req, res) {
         });
 
         // Прямой системный кабель на официальный эндпоинт Китая
-        const options = {
-            hostname: '://deepseek.com',
+       const options = {
+            hostname: '://deepseek.com', // СТРОГО ТАК! Никаких "://", никаких "https", только чистый домен
             port: 443,
             path: '/v1/chat/completions',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Подхватывает твою новую вывеску ключа из панели Vercel
                 'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY || ''}`,
                 'Content-Length': Buffer.byteLength(postData)
             }
