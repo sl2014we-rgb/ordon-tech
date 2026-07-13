@@ -1,7 +1,7 @@
 const https = require('https');
 
 module.exports = function handler(req, res) {
-    // Жёсткий CORS-прострел для promis.space
+    // Жёсткий CORS-прострел для беспрепятственного вывода на promis.space
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -17,19 +17,22 @@ module.exports = function handler(req, res) {
     try {
         const { messages, temperature } = req.body;
 
+        // Формируем Payload строго под официальные стандарты DeepSeek API
         const postData = JSON.stringify({
-            model: 'geekbot',
+            model: 'deepseek-chat', // Официальный запуск флагманской модели DeepSeek-V3
             messages: messages,
-            temperature: temperature || 0.0
+            temperature: temperature || 0.0 // Полное выжигание галлюцинации и лени
         });
 
+        // Прямой системный кабель на официальный эндпоинт Китая
         const options = {
-            hostname: 'geekbot.ru',
+            hostname: '://deepseek.com',
             port: 443,
             path: '/v1/chat/completions',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                // Подхватывает твой новый ключ DeepSeek из переменной GEEKBOT_API_KEY
                 'Authorization': `Bearer ${process.env.GEEKBOT_API_KEY || ''}`,
                 'Content-Length': Buffer.byteLength(postData)
             }
@@ -37,19 +40,19 @@ module.exports = function handler(req, res) {
 
         const gRequest = https.request(options, (gResponse) => {
             let buffer = '';
-            gResponse.on('data', (chunk) => { buffer += chunk; });
+            gRequest.on('data', (chunk) => { buffer += chunk; });
             gResponse.on('end', () => {
                 try {
                     if (gResponse.statusCode !== 200) {
                         return res.status(200).json({
-                            choices: [{ message: { content: `❌ Отказ сервера GeekBot (Статус ${gResponse.statusCode}): ${buffer}. Проверьте токен на Vercel.` } }]
+                            choices: [{ message: { content: `❌ Отказ официального ядра DeepSeek (Статус ${gResponse.statusCode}): ${buffer}. Проверьте токен в панели Vercel.` } }]
                         });
                     }
                     const data = JSON.parse(buffer);
                     return res.status(200).json(data);
                 } catch (parseErr) {
                     return res.status(200).json({
-                        choices: [{ message: { content: `❌ Ошибка обработки ответа ИИ: ${buffer}` } }]
+                        choices: [{ message: { content: `❌ Ошибка обработки потока DeepSeek: ${buffer}` } }]
                     });
                 }
             });
@@ -57,7 +60,7 @@ module.exports = function handler(req, res) {
 
         gRequest.on('error', (e) => {
             return res.status(200).json({
-                choices: [{ message: { content: `❌ Ошибка коннекта моста к GeekBot: ${e.message}` } }]
+                choices: [{ message: { content: `❌ Ошибка коннекта моста к Китаю: ${e.message}` } }]
             });
         });
 
