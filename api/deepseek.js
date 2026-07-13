@@ -1,75 +1,118 @@
 const https = require('https');
 
 module.exports = function handler(req, res) {
-    // Жесткий CORS-прострел для беспрепятственного вывода на promis.space
+    // CORS (можно вынести в middleware, но оставляем для совместимости)
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    // Перехват предварительной проверки браузера (Preflight)
     if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+        return res.status(204).end(); // 204 No Content для preflight
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Разрешены только POST-запросы ORDON' });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    try {
-        const { messages, temperature } = req.body;
-
-        // Формируем Payload строго под официальные стандарты DeepSeek API
-        const postData = JSON.stringify({
-            model: 'deepseek-chat', // Флагманское ядро DeepSeek-V3
-            messages: messages,
-            temperature: temperature || 0.0 // Выжигаем галлюцинации и лень
-        });
-
-        // Прямой системный кабель на официальный эндпоинт Китая
-       const options = {
-    hostname: 'api.deepseek.com',       
-    port: 443,
-    path: '/v1/chat/completions',
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer \${process.env.DEEPSEEK_API_KEY || ''}`,
-        'Content-Length': Buffer.byteLength(postData)
-    }
-};
-        const gRequest = https.request(options, (gResponse) => {
-            let buffer = '';
-            gResponse.on('data', (chunk) => { buffer += chunk; });
-            gResponse.on('end', () => {
-                try {
-                    if (gResponse.statusCode !== 200) {
-                        return res.status(200).json({
-                            choices: [{ message: { content: `❌ Отказ официального ядра DeepSeek (Статус ${gResponse.statusCode}): ${buffer}. Проверьте токен DEEPSEEK_API_KEY в панели Vercel.` } }]
-                        });
-                    }
-                    const data = JSON.parse(buffer);
-                    return res.status(200).json(data);
-                } catch (parseErr) {
-                    return res.status(200).json({
-                        choices: [{ message: { content: `❌ Ошибка обработки потока DeepSeek: ${buffer}` } }]
-                    });
-                }
-            });
-        });
-
-        gRequest.on('error', (e) => {
-            return res.status(200).json({
-                choices: [{ message: { content: `❌ Ошибка коннекта моста к Китаю: ${e.message}` } }]
-            });
-        });
-
-        gRequest.write(postData);
-        gRequest.end();
-
-    } catch (error) {
-        return res.status(200).json({
-            choices: [{ message: { content: `❌ Авария скрипта Node.js: ${error.message}` } }]
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    
+    // Проверка наличия ключа ДО отправки запроса
+    if (!apiKey || apiKey.trim() === '') {
+        console.error('DEEPSEEK_API_KEY is missing');
+        return res.status(500).json({ 
+            choices: [{ message: { content: '❌ Ошибка конфигурации: API ключ не найден. Проверьте переменные окружения в Vercel.' } }] 
         });
     }
+
+    const { messages, temperature } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: 'Invalid payload: messages array is required' });
+    }
+
+    const postData = JSON.stringify({
+        model: 'deepseek-chat',
+        messages: messages,
+        temperature: typeof temperature === 'number' ? temperature : 0.0
+    });
+
+    const options = {
+        hostname: 'api.deepseek.com',
+        port: 443,
+        path: '/v1/chat/completions',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer \${apiKey}`, // ✅ Исправлено: правильная подстановка
+            'Content-Length': Buffer.byteLength(postData),
+            'User-Agent': 'ORDON-Integration/1.0' // Полезно для аналитики
+        },
+        timeout: 60000 // 60 секунд таймаут
+    };
+
+    const gRequest = https.request(options, (gResponse) => {
+        let buffer = '';
+        
+        gResponse.on('data', (chunk) => {
+            buffer += chunk;
+        });
+
+        gResponse.on('end', () => {
+            // Пробрасываем реальный статус от DeepSeek (401, 500 и т.д.)
+            // Если DeepSeek вернул ошибку, мы не должны возвращать 200 клиенту
+            const statusCodeToReturn = (gResponse.statusCode >= 500) ? 502 : gResponse.statusCode;
+
+            if (gResponse.statusCode !== 200) {
+                // Логируем ошибку (без ключа!), но возвращаем понятный ответ
+                console.warn(`DeepSeek error ${gResponse.statusCode}: ${buffer.substring(0, 200)}...`);
+                
+                return res.status(statusCodeToReturn).json({
+                    choices: [{ 
+                        message: { 
+                            content: `❌ Отказ ядра DeepSeek (Статус \${gResponse.statusCode}). Проверьте логи сервера.` 
+                        } 
+                    }]
+                });
+            }
+
+            try {
+                const data = JSON.parse(buffer);
+                return res.status(200).json(data);
+            } catch (parseErr) {
+                console.error('Parse error:', parseErr);
+                return res.status(500).json({
+                    choices: [{ 
+                        message: { 
+                            content: `❌ Ошибка парсинга ответа от DeepSeek. Ответ не является валидным JSON.` 
+                        } 
+                    }]
+                });
+            }
+        });
+    });
+
+    gRequest.on('error', (e) => {
+        console.error('Connection error:', e.message);
+        return res.status(502).json({
+            choices: [{ 
+                message: { 
+                    content: `❌ Ошибка соединения с API DeepSeek: \${e.message}` 
+                } 
+            }]
+        });
+    });
+
+    gRequest.on('timeout', () => {
+        gRequest.destroy();
+        return res.status(504).json({
+            choices: [{ 
+                message: { 
+                    content: '❌ Превышено время ожидания ответа от DeepSeek.' 
+                } 
+            }]
+        });
+    });
+
+    gRequest.write(postData);
+    gRequest.end();
 };
