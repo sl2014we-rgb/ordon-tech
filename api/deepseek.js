@@ -1,57 +1,72 @@
 module.exports = async function handler(req, res) {
-    // 1. Абсолютный CORS-прострел под корень для promis.space
+    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    // 2. Мгновенно гасим предварительную проверку браузера (Preflight)
     if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+        return res.status(200).end();
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Разрешены только POST-запросы ORDON' });
+        return res.status(405).json({ 
+            error: 'Method Not Allowed',
+            message: 'Только POST-запросы' 
+        });
     }
 
     try {
-        const { messages, temperature } = req.body;
+        const { messages, temperature = 0.0 } = req.body;
 
-        // 3. Формируем Payload строго под стандарты DeepSeek API
-        const postData = {
-            model: 'deepseek-chat', // Флагманское рассуждающее ядро DeepSeek-V3
-            messages: messages,
-            temperature: temperature || 0.0 // Полное выжигание галлюцинаций
-        };
-
-        // 4. Запускаем нативный fetch напрямую на официальный сервер Китая
-        // CloudFront пропустит этот запрос, так как мы передаем легитимный User-Agent
-        const response = await fetch('https://deepseek.com', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // Подхватывает твой новый ключ из сейфа настроек Vercel
-                'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY || ''}`,
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ORDON/0.3'
-            },
-            body: JSON.stringify(postData)
-        });
-
-        const responseText = await response.text();
-
-        // 5. Обработка ответа
-        if (!response.ok) {
-            return res.status(200).json({
-                choices: [{ message: { content: `❌ Ошибка серверов DeepSeek/CloudFront (Статус ${response.status}): ${responseText}. Проверьте баланс аккаунта и токен в Vercel.` } }]
+        if (!messages || !Array.isArray(messages)) {
+            return res.status(400).json({ 
+                error: 'Bad Request',
+                message: 'messages должен быть массивом' 
             });
         }
 
-        const data = JSON.parse(responseText);
+        const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+        if (!DEEPSEEK_API_KEY) {
+            return res.status(500).json({ 
+                error: 'Server Config Error',
+                message: 'DEEPSEEK_API_KEY не настроен' 
+            });
+        }
+
+        // Правильный эндпоинт и User-Agent
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+                'User-Agent': 'ORDON-Proxy/0.3'
+            },
+            body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: messages,
+                temperature: temperature,
+                max_tokens: 4096
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('DeepSeek API Error:', data);
+            return res.status(response.status).json({
+                error: 'DeepSeek API Error',
+                details: data.error?.message || data
+            });
+        }
+
         return res.status(200).json(data);
 
     } catch (error) {
-        return res.status(200).json({
-            choices: [{ message: { content: `❌ Авария транзитного скрипта Node.js: ${error.message}` } }]
+        console.error('Proxy Error:', error);
+        return res.status(502).json({
+            error: 'Bad Gateway',
+            message: 'Ошибка прокси-сервера',
+            details: error.message
         });
     }
 };
