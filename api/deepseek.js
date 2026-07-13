@@ -28,17 +28,16 @@ module.exports = function handler(req, res) {
 
         // Прямой системный кабель на официальный эндпоинт Китая
        const options = {
-            hostname:'api.deepseek.com' 
-            port: 443,
-            path: '/v1/chat/completions',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY || ''}`,
-                'Content-Length': Buffer.byteLength(postData)
-            }
-        };
-
+    hostname: 'api.deepseek.com',       
+    port: 443,
+    path: '/v1/chat/completions',
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer \${process.env.DEEPSEEK_API_KEY || ''}`,
+        'Content-Length': Buffer.byteLength(postData)
+    }
+};
         const gRequest = https.request(options, (gResponse) => {
             let buffer = '';
             gResponse.on('data', (chunk) => { buffer += chunk; });
