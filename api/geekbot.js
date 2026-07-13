@@ -1,13 +1,15 @@
 const https = require('https');
 
 module.exports = function handler(req, res) {
-    // Жёсткий CORS-прострел для беспрепятственного вывода на promis.space
+    // Выжигаем CORS-блокировки браузера под корень для promis.space
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
+    // КРИТИЧЕСКИЙ БЛОК: Мгновенно гасим предварительную проверку браузера (Preflight)
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        res.status(200).end();
+        return;
     }
 
     if (req.method !== 'POST') {
@@ -17,14 +19,12 @@ module.exports = function handler(req, res) {
     try {
         const { messages, temperature } = req.body;
 
-        // Формируем Payload строго под официальные стандарты DeepSeek API
         const postData = JSON.stringify({
-            model: 'deepseek-chat', // Официальный запуск флагманской модели DeepSeek-V3
+            model: 'deepseek-chat', 
             messages: messages,
-            temperature: temperature || 0.0 // Полное выжигание галлюцинации и лени
+            temperature: temperature || 0.0 
         });
 
-        // Прямой системный кабель на официальный эндпоинт Китая
         const options = {
             hostname: '://deepseek.com',
             port: 443,
@@ -32,7 +32,6 @@ module.exports = function handler(req, res) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Подхватывает твой новый ключ DeepSeek из переменной GEEKBOT_API_KEY
                 'Authorization': `Bearer ${process.env.GEEKBOT_API_KEY || ''}`,
                 'Content-Length': Buffer.byteLength(postData)
             }
@@ -40,7 +39,7 @@ module.exports = function handler(req, res) {
 
         const gRequest = https.request(options, (gResponse) => {
             let buffer = '';
-            gRequest.on('data', (chunk) => { buffer += chunk; });
+            gResponse.on('data', (chunk) => { buffer += chunk; });
             gResponse.on('end', () => {
                 try {
                     if (gResponse.statusCode !== 200) {
