@@ -28,7 +28,7 @@ module.exports = function handler(req, res) {
 
         // Прямой системный кабель на официальный эндпоинт Китая
        const options = {
-            hostname:'https://api.deepseek.com' 
+            hostname:'api.deepseek.com' 
             port: 443,
             path: '/v1/chat/completions',
             method: 'POST',
